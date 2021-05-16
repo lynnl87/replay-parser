@@ -1,3 +1,7 @@
 # dependencies
 /Processed
 /Replays
+/*.txt
+/config.py
+/__pycache__/
+/.mypy_cache
