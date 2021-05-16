@@ -73,5 +73,5 @@ for file in glob.glob("./Processed/*.StormReplay"):
                 player.get('AltarDamageDone'), player.get('EndOfMatchAwardMVPBoolean'))
             print(player.get('DamageSoaked'))
             mycursor.execute(sql, values)
-            mydb.commit()
+            #mydb.commit()
 print("finished")
