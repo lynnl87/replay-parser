@@ -2,30 +2,102 @@ import constant
 import sys
 from heroprotocol.versions import latest, list_all, build
 import mpyq
-import datetime
+from datetime import datetime
 
-# This class is basically an easy to use wrapper around the heroprotocol library.
-# I previously would of initialized the archive in the constructor, but if we are
-# parsing multiple replays, we want build() to keep track of the protocols rather
-# than losing them each class instantiation.
+
 class ParseHelper:
+    """
+    Class is used to make interfacing with the hero protocol library a bit easier.
+
+    Methods
+    -------
+
+    initProtocols(replayPath):F
+        Handles initializing the protocol library and getting the corresponding protocol.
+
+    filetime_to_dt(s)
+        Handles converting the file time structure to a regular date time.
+
+    loopsToSeconds(s)
+        Converts game loops to actual seconds.
+
+    getDetails()
+        Gets the game details.
+
+    getInitData()
+        Gets some initialization data from the game.
+
+    getTrackerEvents()
+        Gets the tracker events from the game.
+
+    getProtocol()
+        Returns the internal protocol found for the parsed replay.
+    """
+
     def __init__(self):
+        """
+        Initiailizes an instance of this class.
+
+        """
         self.archive = ''
         self.protocol = ''
 
-    def initProtocols(self, replayPath):
+    def initProtocols(self, replayPath: str) -> None:
+        """
+        Initializes the protocols needed to parse the passed in replay
+
+        Parameters
+        ----------
+        replayPath: str
+            Path to the replay.
+        """
         self.archive = mpyq.MPQArchive(replayPath)
         self.protocol = self._getProtocol()
 
-    def filetime_to_dt(self, s):
-        return datetime.datetime.fromtimestamp((s - 116444736000000000) // 10000000)
+    def filetime_to_dt(self, s: int) -> datetime:
+        """
+        Returns a datetime object from passed in filetime.
 
-    # game loops aren't seconds. They start at 610 and go 16 frames a second.
-    def loopsToSeconds(self, loops):
-        return (loops - 610) / 16
+        Parameters
+        ----------
+        s: int
+            Filetime to convert.
 
-    # handles getting the protocol we need for this specific replay.
+        Returns
+        -------
+        The datetime from the passed in filetime.
+
+        """
+        return datetime.fromtimestamp((s - 116444736000000000) // 10000000)
+
+    def loopsToSeconds(self, loops: int) -> int:
+        """
+        Returns the seconds from a gameloop.
+
+        Parameters
+        ----------
+        loops: int
+            The number of loops the game has performed.
+
+        Returns
+        -------
+        The seconds from gameloops.
+
+        Remarks
+        -------
+        Game loops aren't seconds. They start at 610 and the server tick is 16 fps.
+
+        """
+        return int((loops - 610) / 16)
+
     def _getProtocol(self):
+        """
+        Handles getting the internal protocol.
+
+        Returns
+        -------
+        A Python module object.
+        """
         contents = self.archive.header['user_data_header']['content']
         header = latest().decode_replay_header(contents)
         baseBuild = header['m_version']['m_baseBuild']
@@ -37,15 +109,43 @@ class ParseHelper:
         return newProto
 
     def getDetails(self):
+        """
+        Handles getting the a list of details.
+
+        Returns
+        -------
+        a list of players.
+        """
         contents = self.archive.read_file(constant.ARCHIVE_DETAILS)
         return self.protocol.decode_replay_details(contents)
 
     def getInitData(self):
+        """
+        Handles getting initial data of the game.
+
+        Returns
+        ------
+        Initial game data.
+        """
         contents = self.archive.read_file(constant.ARCHIVE_INIT_DATA)
         return self.protocol.decode_replay_initdata(contents)
-        
+
     def getTrackerEvents(self):
+        """
+        Handles getting tracking data of the game.
+
+        Returns
+        ------
+        Tracking events from the replay.
+        """
         return self.archive.read_file(constant.ARCHIVE_TRACKER_EVENTS)
 
     def getProtocol(self):
+        """
+        Returns the protocol used to parse the replay.
+
+        Returns
+        ------
+        The porotocol used to parse the replay.
+        """
         return self.protocol
